@@ -2,11 +2,13 @@ import React from 'react';
 import { FaSun, FaMoon } from 'react-icons/fa'; 
 import Logout from "./Logout";
 import Create from './Create';
+import { useNavigate } from "react-router-dom";
 
 const Navbar = ({ toggleTheme, theme }) => {
+    const navigate = useNavigate();
     const navbarStyle = theme === 'light' ? 'bg-white text-black' : 'bg-gray-900 text-white';
     const logoColor = theme === 'light' ? 'text-gray-900' : 'text-white';
-    
+
     return (
         <div className={`navbar shadow-md px-4 py-2 ${navbarStyle}`}>
             <div className="flex-1 flex items-center">
@@ -19,17 +21,14 @@ const Navbar = ({ toggleTheme, theme }) => {
                     className="h-10 ml-4" 
                 />
             </div>
-            <li className=' mr-5'>
+            <div className='mr-5'>
                 <Create />
-            </li>
-            <div className="flex-none">
-                <ul className="menu menu-horizontal p-0"></ul>
             </div>
-            <li>
+            <div className="flex items-center space-x-6">
                 <Logout />
-            </li>
-            <div onClick={toggleTheme} className="cursor-pointer ml-4 hover:text-blue-300 transition duration-300">
-                {theme === 'light' ? <FaMoon size={24} /> : <FaSun size={24} />} 
+                <div onClick={toggleTheme} className="cursor-pointer ml-4 hover:text-blue-300 transition duration-300">
+                    {theme === 'light' ? <FaMoon size={24} /> : <FaSun size={24} />} 
+                </div>
             </div>
         </div>
     );

@@ -22,29 +22,26 @@ const Login = () => {
     setError('');
   
     try {
-      const response = await axios.post('http://localhost:5000/api/v1/admin/login/', {
-        name: username, 
+      const response = await axios.post('http://localhost:5000/api/v1/admin/login', {
+        username: username,
         password,
       });
-  
-      console.log('Ответ сервера:', response.data);
-  
+
       if (response.data.admin) {
-        console.log('Авторизация успешна');
         localStorage.setItem('admin', JSON.stringify(response.data.admin));
-        dispatch(login());
+        dispatch(login()); // Ensure this updates the isAuthenticated state
         navigate('/app/home');
       } else {
         setError('Неверное имя или пароль');
       }
     } catch (error) {
-      console.error('Ошибка при отправке данных:', error);
       setError('Ошибка при попытке входа');
     } finally {
       setLoading(false);
     }
   };
   
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center" style={{ backgroundImage: 'url(/path/to/your/background-image.jpg)' }}>
@@ -91,11 +88,7 @@ const Login = () => {
           {loading ? 'Загрузка...' : 'Войти'}
         </button>
 
-        <div className="text-center mt-4">
-          <a className="text-blue-500 hover:underline">
-            Забыли пароль?
-          </a>
-        </div>
+        
       </div>
     </div>
   );

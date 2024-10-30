@@ -20,6 +20,7 @@ import Magazin from "./pages/Magazin";
 import Oplatazakaz from "./pages/Oplatazakaz";
 import Dostavka from "./pages/Dostavka";
 import Contacts from "./pages/Contacts";
+import Category from "./pages/Category";
 
 const router = createBrowserRouter([
   {
@@ -27,7 +28,7 @@ const router = createBrowserRouter([
     element: 
     <PrivateRoute >
       <App />
-    </PrivateRoute>
+      </PrivateRoute>
     ,
     children: [
       {
@@ -45,6 +46,13 @@ const router = createBrowserRouter([
         </PrivateRoute>,
       },
       
+      {
+        path: "category", 
+        element: 
+        <PrivateRoute >
+        <Category />
+        </PrivateRoute>,
+      },
       {
         path: "magazin", 
         element: 
@@ -99,7 +107,7 @@ const router = createBrowserRouter([
         element: <PrivateRoute >
         <Advertising />
         </PrivateRoute>,
-      },
+      }
     ],
   },
   {

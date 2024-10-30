@@ -5,7 +5,7 @@ const Dostavka = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    img: '',
+    image: '',  // Изменяем имя поля на 'image'
     name: '',
     description: '',
   });
@@ -33,42 +33,50 @@ const Dostavka = () => {
     const { name, value, files } = e.target;
     setFormData((prevFormData) => ({
       ...prevFormData,
-      [name]: files ? files[0] : value, // Сохраняем только первое изображение
+      [name]: files ? files[0] : value,  // Сохраняем только первое изображение
     }));
   };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const formDataToSend = new FormData();
-    formDataToSend.append('name', formData.name);
-    formDataToSend.append('description', formData.description);
-    if (formData.img) {
-      formDataToSend.append('images', formData.img); // Можно добавить поддержку нескольких файлов
-    }
-
+  
     try {
-      const url = isEditing ? `http://localhost:5000/api/v1/dastavka/${currentEditId}` : 'http://localhost:5000/api/v1/dastavka/create';
+      const url = isEditing
+        ? `http://localhost:5000/api/v1/dastavka/${currentEditId}`
+        : 'http://localhost:5000/api/v1/dastavka/create';
       const method = isEditing ? 'PUT' : 'POST';
-
+  
+      // Создание объекта FormData и добавление данных из формы
+      const formDataToSend = new FormData();
+      formDataToSend.append('image', formData.image);  // Изменяем 'img' на 'image'
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+  
       const response = await fetch(url, {
         method,
         body: formDataToSend,
       });
-
-      if (!response.ok) {
-        const errorResponse = await response.json();
-        throw new Error(errorResponse.message || 'Ошибка при отправке формы');
+  
+      const contentType = response.headers.get('content-type');
+      if (!response.ok || !contentType.includes('application/json')) {
+        const errorResponse = await response.text();
+        throw new Error(`Ошибка сервера: ${errorResponse}`);
       }
-
+  
       const result = await response.json();
+  
       if (isEditing) {
-        setData((prevData) => prevData.map((item) => (item._id === currentEditId ? result.dastavka : item)));
+        setData((prevData) =>
+          prevData.map((item) =>
+            item._id === currentEditId ? result.dastavka : item
+          )
+        );
       } else {
         setData((prevData) => [...prevData, result.dastavka]);
       }
-
-      setFormData({ img: '', name: '', description: '' });
+  
+      setFormData({ image: '', name: '', description: '' });
       setIsEditing(false);
       setCurrentEditId(null);
       document.getElementById('my_modal_dostavka').close();
@@ -84,7 +92,7 @@ const Dostavka = () => {
     setIsEditing(true);
     setCurrentEditId(dostavkaItem._id);
     setFormData({
-      img: '', // Обратите внимание, что здесь мы не устанавливаем img, чтобы избежать путаницы
+      image: '',  // Оставляем изображение пустым для избежания путаницы
       name: dostavkaItem.name,
       description: dostavkaItem.description,
     });
@@ -115,7 +123,7 @@ const Dostavka = () => {
         <button className="btn btn-primary" onClick={() => {
           setIsEditing(false);
           setCurrentEditId(null);
-          setFormData({ img: '', name: '', description: '' });
+          setFormData({ image: '', name: '', description: '' });  // Изменяем img на image
           document.getElementById('my_modal_dostavka').showModal();
         }}>
           {isEditing ? 'Редактировать' : 'Добавить'}
@@ -130,7 +138,7 @@ const Dostavka = () => {
           <form onSubmit={handleFormSubmit}>
             <label className="input input-bordered flex items-center gap-2 mt-10">
               Изображение 
-              <input type="file" name="img" onChange={handleFormChange} className="grow" required />
+              <input type="file" name="image" onChange={handleFormChange} className="grow" required />  {/* Изменяем 'img' на 'image' */}
             </label>
             <label className="input input-bordered flex items-center gap-2 mt-5">
               Название
@@ -169,7 +177,7 @@ const Dostavka = () => {
         <tr key={dostavkaItem._id} className='text-white'>
           <td>{dostavkaItem._id}</td>
           <td>
-            <img src={`http://localhost:5000/${dostavkaItem.images}`} alt={dostavkaItem.name} className="w-[100px] h-[100px] object-cover"/>
+            <img src={`http://localhost:5000/${dostavkaItem.image}`} alt={dostavkaItem.name} className="w-[100px] h-[100px] object-cover"/>
           </td>
           <td>{dostavkaItem.name}</td>
           <td>

@@ -20,7 +20,7 @@ const Logout = () => {
   };
 
   return (
-    <div>
+    <div className=" text-white">
       <button
         onClick={openModal}
         className="bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-600 transition duration-200 ease-in-out"

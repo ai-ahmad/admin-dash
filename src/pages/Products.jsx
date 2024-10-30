@@ -27,6 +27,8 @@ const Products = () => {
   const [selectedImage, setSelectedImage] = useState(null); 
   const [imageFields, setImageFields] = useState([0]); 
   const [mainImageIndex, setMainImageIndex] = useState(null);
+  const [categories, setCategories] = useState([]); // Store fetched categories
+
 
   // Set initial form data
   const [formData, setFormData] = useState(initialFormData);
@@ -65,6 +67,21 @@ const Products = () => {
       }));
     }
   };
+  
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/category');
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
+      }
+      const categoriesData = await response.json();
+      setCategories(categoriesData); // Set fetched categories to state
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+  
 
   const addImageField = () => {
     if (formData.images.length >= 6) {
@@ -99,8 +116,15 @@ const Products = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
+    // Проверка: если цена со скидкой >= оригинальной цены
     if (formData.discount_price && parseFloat(formData.discount_price) >= parseFloat(formData.price)) {
       alert('Discount price must be less than the original price.');
+      return;
+    }
+
+    // Проверка: наличие хотя бы одного изображения
+    if (!formData.images || formData.images.length === 0) {
+      alert('Please upload at least one image.');
       return;
     }
 
@@ -121,14 +145,17 @@ const Products = () => {
     const mainImage = formData.images[mainImageIndex]; 
     const allImages = formData.images;
 
+    // Добавление основного изображения (если есть)
     if (mainImage) {
       formDataToSend.append('images', mainImage); 
     }
 
+    // Добавление всех изображений
     allImages.forEach((image) => {
       formDataToSend.append('images', image); 
     });
 
+    // Добавление PDF, если есть
     if (formData.pdf) {
       formDataToSend.append('product_info_pdf', formData.pdf);
     }
@@ -149,11 +176,12 @@ const Products = () => {
 
       setData((prevData) => [...prevData, newProduct]);
       closeModal('my_modal_3');
-      setFormData(initialFormData);  // Reset form after submission
+      setFormData(initialFormData);  // Сброс формы после отправки
     } catch (error) {
       console.error('Error adding product:', error.message);
     }
   };
+
 
   const handleDelete = async (id) => {
     try {
@@ -170,6 +198,11 @@ const Products = () => {
       console.error('Error deleting product:', error);
     }
   };
+
+  useEffect(() => {
+    fetchCategories(); // Fetch categories when component loads
+  }, []);
+  
 
   useEffect(() => {
     const fetchData = async () => {
@@ -234,16 +267,23 @@ data.forEach(item => {
               </label>
 
               <label className="block">
-                <span className="text-gray-300">Категория</span>
-                <input
-                  type="text"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleFormChange}
-                  className="input w-full mt-1 p-2 bg-gray-700 rounded-md text-white"
-                  required
-                />
-              </label>
+  <span className="text-gray-300">Категория</span>
+  <select
+    name="category"
+    value={formData.category}
+    onChange={handleFormChange}
+    className="input w-full mt-1 p-2 bg-gray-700 rounded-md text-white"
+    required
+  >
+    <option value="">Выберите категорию</option>
+    {categories.map((category) => (
+      <option key={category._id} value={category.category_name}>
+        {category.category_name}
+      </option>
+    ))}
+  </select>
+</label>
+
 
               <label className="block">
                 <span className="text-gray-300">Цена продукта</span>
@@ -436,38 +476,45 @@ data.forEach(item => {
               </tr>
             </thead>
             <tbody className="w-full break-normal break-words">
-              {data.map((product) => (
-                <tr key={product._id} className="w-full text-white">
-                  <td>{product.name}</td>
-                  <td>
-                  {console.log(product)}  {/* Лог выводится вне JSX */}
-    <img
-      src={`http://localhost:5000/${product['image']['main_images']}`} // Ensure the URL is correctly built
-      alt={product.name}
-      className="w-16 h-16 object-cover inline-block mr-2 cursor-pointer"
-      onClick={() => openImageModal(`http://localhost:5000/${product['main_images']}`)} // Передаем корректный путь
-    />
-</td>
-                  <td>
-                    {product.product_info_pdf && (
-                      <a href={`http://localhost:5000/${product.product_info_pdf}`} target="_blank" rel="noopener noreferrer">
-                        Скачать PDF
-                      </a>
-                    )}
-                  </td>
-                  <td>{product.description.length > 30 ? `${product.description.substring(0, 30)}...` : product.description}</td>
-                  <td>${product.price}</td>
-                  <td>
-                    <button
-                      className="btn btn-danger hover:bg-red-600 transition duration-200"
-                      onClick={() => handleDelete(product._id)}
-                    >
-                      <FaTrash />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+  {data.map((product) => (
+    <tr key={product._id} className="w-full text-white">
+      <td>{product.name}</td>
+      <td>
+        {product.image && Array.isArray(product.image.main_images) && product.image.main_images.length > 0 ? (
+          <img
+            src={`http://localhost:5000/${product.image.main_images[0]}`}
+            alt={product.name}
+            className="w-16 h-16 object-cover inline-block mr-2 cursor-pointer"
+            onClick={() => openImageModal(`http://localhost:5000/${product.image.main_images[0]}`)}
+          />
+        ) : (
+          <span>No Image Available</span>
+        )}
+      </td>
+      <td>
+        {product.product_info_pdf ? (
+          <a href={`http://localhost:5000/${product.product_info_pdf}`} target="_blank" rel="noopener noreferrer">
+            Скачать PDF
+          </a>
+        ) : (
+          <span>No PDF Available</span>
+        )}
+      </td>
+      <td>{product.description.length > 30 ? `${product.description.substring(0, 30)}...` : product.description}</td>
+      <td>${product.price}</td>
+      <td>
+        <button
+          className="btn btn-danger hover:bg-red-600 transition duration-200"
+          onClick={() => handleDelete(product._id)}
+        >
+          <FaTrash />
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
+   
           </table>
         </div>
       </div>
@@ -483,6 +530,8 @@ data.forEach(item => {
           {selectedImage && <img src={selectedImage} alt="Selected" className="w-full h-auto object-contain" />}
         </div>
       </dialog>
+
+      
     </div>
   );
 };

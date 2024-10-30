@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FaBullhorn, FaClipboardList, FaNewspaper, FaHome, FaBoxOpen, FaStore, FaCreditCard, FaTruck, FaAddressBook } from 'react-icons/fa';
+import { FaTags, FaBullhorn, FaClipboardList, FaNewspaper, FaHome, FaBoxOpen, FaStore, FaCreditCard, FaTruck, FaAddressBook } from 'react-icons/fa';
 
 const Sidebar = ({ theme }) => {
   const location = useLocation();
@@ -139,6 +139,21 @@ const Sidebar = ({ theme }) => {
               <FaAddressBook size={20} /> Контакты
             </Link>
           </li>
+
+          
+          <li>
+  <Link
+    to="/app/category" 
+    className={`flex items-center gap-4 py-2 px-5 rounded-lg transition-all duration-300 ${
+      location.pathname === "/app/category"
+        ? linkActiveStyle
+        : linkHoverStyle
+    }`}
+  >
+    <FaTags size={20} /> Категория
+  </Link>
+</li>
+
         </ul>
       </div>
     </div>

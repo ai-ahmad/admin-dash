@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { FaPlus, FaTrash, FaSpinner } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaSpinner, FaEdit } from 'react-icons/fa';
 
 const Otziv = () => {
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [formData, setFormData] = useState({
+    const [data, setData] = useState([]); // To store fetched reviews
+    const [loading, setLoading] = useState(true); // To show loading state
+    const [formData, setFormData] = useState({ // Form data for adding/editing
         name: '',
         date: '',
         rating: '',
         comment: '',
     });
+    const [isEditing, setIsEditing] = useState(false); // Check if we're in edit mode
+    const [currentEditId, setCurrentEditId] = useState(null); // The ID of the review being edited
 
+    // Fetch all reviews
     const fetchOtzivs = async () => {
         try {
             const response = await fetch('http://localhost:5000/api/v1/otziv');
@@ -27,6 +30,7 @@ const Otziv = () => {
         fetchOtzivs();
     }, []);
 
+    // Handle form input change
     const handleFormChange = (e) => {
         const { name, value } = e.target;
         setFormData((prevFormData) => ({
@@ -35,52 +39,96 @@ const Otziv = () => {
         }));
     };
 
+    // Handle form submission for adding or editing a review
     const handleFormSubmit = async (e) => {
         e.preventDefault();
-        
+    
         try {
-            const response = await fetch('http://localhost:5000/api/v1/otziv/create', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
-            
-            if (!response.ok) {
-                throw new Error('Error adding otziv');
+            if (isEditing && currentEditId) {
+                // Отправляем PUT запрос для обновления отзыва
+                const response = await fetch(`http://localhost:5000/api/v1/otziv/${currentEditId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Error updating otziv');
+                }
+    
+                const updatedOtziv = await response.json();
+                setData((prevData) =>
+                    prevData.map((otziv) => (otziv._id === currentEditId ? updatedOtziv.data : otziv))
+                );
+            } else {
+                // Отправляем POST запрос для добавления нового отзыва
+                const response = await fetch('http://localhost:5000/api/v1/otziv/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Error adding otziv');
+                }
+    
+                const newOtziv = await response.json();
+                setData((prevData) => [...prevData, newOtziv.data]);
             }
-            
-            const newOtziv = await response.json();
-            setData((prevData) => [...prevData, newOtziv.data]);
-            setFormData({ name: '', date: '', rating: '', comment: '' });
+    
+            resetForm();
             document.getElementById('my_modal_otziv').close();
         } catch (error) {
-            console.error('Error adding otziv:', error);
+            console.error('Error submitting otziv:', error);
         }
     };
+    
 
+    // Reset form and cancel edit mode
+    const resetForm = () => {
+        setFormData({
+            name: '',
+            date: '',
+            rating: '',
+            comment: '',
+        });
+        setIsEditing(false);
+        setCurrentEditId(null);
+    };
+
+    // Handle edit button click to populate form with review data
+    const handleEdit = (otziv) => {
+        setIsEditing(true);
+        setCurrentEditId(otziv._id);
+        setFormData({
+            name: otziv.name,
+            date: otziv.date.split('T')[0], // Extract only the date portion
+            rating: otziv.rating,
+            comment: otziv.comment,
+        });
+        document.getElementById('my_modal_otziv').showModal();
+    };
+
+    // Handle delete action for reviews
     const handleDelete = async (id) => {
         try {
-            const response = await fetch(`http://localhost:5000/api/v1/otziv/delete`, {
+            const response = await fetch(`http://localhost:5000/api/v1/otziv/${id}`, {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ id }),
             });
             if (!response.ok) {
                 throw new Error('Error deleting otziv');
             }
-            const deletedOtziv = await response.json();
-            setData((prevData) => prevData.filter((otziv) => otziv._id !== deletedOtziv.data._id));
+            setData((prevData) => prevData.filter((otziv) => otziv._id !== id));
         } catch (error) {
             console.error('Error deleting otziv:', error);
         }
     };
 
-    
-
+    // Truncate long comments for display
     const truncateComment = (comment) => {
         if (!comment) return ''; // Return empty string if comment is undefined or null
         const words = comment.split(' ');
@@ -91,7 +139,7 @@ const Otziv = () => {
         <div className="p-5 flex flex-col w-10/12 gap-5">
             <div className="bg-base-200 p-5 w-full flex justify-between items-center rounded-2xl">
                 <h1 className="text-2xl font-bold text-primary">Отзывы</h1>
-                <button className="btn btn-primary flex items-center" onClick={() => document.getElementById('my_modal_otziv').showModal()}>
+                <button className="btn btn-primary flex items-center" onClick={() => { resetForm(); document.getElementById('my_modal_otziv').showModal(); }}>
                     <FaPlus className="mr-2" /> Добавить
                 </button>
             </div>
@@ -118,7 +166,9 @@ const Otziv = () => {
                             Комментарий
                             <textarea name="comment" value={formData.comment} onChange={handleFormChange} className="grow bg-transparent " placeholder="Ваш комментарий" required></textarea>
                         </label>
-                        <button type="submit" className="btn mt-5">Добавить Отзыв</button>
+                        <button type="submit" className="btn mt-5">
+                            {isEditing ? 'Обновить Отзыв' : 'Добавить Отзыв'}
+                        </button>
                     </form>
                 </div>
             </dialog>
@@ -145,6 +195,9 @@ const Otziv = () => {
                                     <td>{otziv.rating}</td>
                                     <td>{truncateComment(otziv.comment)}</td>
                                     <td>
+                                        <button className="btn hover:bg-yellow-500 transition duration-200 mr-2" onClick={() => handleEdit(otziv)}>
+                                            <FaEdit className="mr-2" /> Редактировать
+                                        </button>
                                         <button className="btn hover:bg-red-600 transition duration-200" onClick={() => handleDelete(otziv._id)}>
                                             <FaTrash className="mr-2" /> Удалить
                                         </button>

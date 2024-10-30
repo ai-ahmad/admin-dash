@@ -38,46 +38,52 @@ const Advertising = () => {
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();
-        
+    
+        if (!formData.image) {
+            alert("Пожалуйста, загрузите изображение перед отправкой.");
+            return; // остановим выполнение, если изображение не выбрано
+        }
+    
         const formDataToSend = new FormData();
         formDataToSend.append('image', formData.image);
         formDataToSend.append('description', formData.description);
     
         try {
             if (isEditing && currentEditId) {
-                // Update existing advertisement
+                // Обновляем существующую рекламу
                 const response = await fetch(`http://localhost:5000/api/v1/banner/${currentEditId}`, {
                     method: 'PUT',
                     body: formDataToSend,
                 });
-
+    
                 if (!response.ok) {
-                    throw new Error('Error updating advertisement');
+                    throw new Error('Ошибка при обновлении рекламы');
                 }
-
+    
                 const updatedAd = await response.json();
                 setData((prevData) => prevData.map(ad => ad._id === currentEditId ? updatedAd : ad));
             } else {
-                // Create new advertisement
+                // Создаем новую рекламу
                 const response = await fetch('http://localhost:5000/api/v1/banner', {
                     method: 'POST',
                     body: formDataToSend,
                 });
-
+    
                 if (!response.ok) {
-                    throw new Error('Error adding advertisement');
+                    throw new Error('Ошибка при добавлении рекламы');
                 }
-
+    
                 const newAd = await response.json();
                 setData((prevData) => [...prevData, newAd]);
             }
-
+    
             document.getElementById('my_modal_advertising').close();
             resetForm();
         } catch (error) {
-            console.error('Error submitting advertisement:', error);
+            console.error('Ошибка при отправке формы рекламы:', error);
         }
     };
+    
 
     const resetForm = () => {
         setFormData({
@@ -185,7 +191,7 @@ const Advertising = () => {
                                             className="btn hover:bg-yellow-500 transition duration-200"
                                             onClick={() => handleEdit(ad)}
                                         >
-                                            <FaEdit className="mr-2" /> изменить 
+                                            <FaEdit className="mr-2" /> Редактировать 
                                         </button>
                                         <button
                                             className="btn hover:bg-yellow-500 transition duration-200 ml-2"
